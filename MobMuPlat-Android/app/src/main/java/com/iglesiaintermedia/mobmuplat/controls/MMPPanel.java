@@ -2,6 +2,7 @@ package com.iglesiaintermedia.mobmuplat.controls;
 
 import java.io.File;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.iglesiaintermedia.mobmuplat.MainActivity;
@@ -31,11 +32,36 @@ public class MMPPanel extends MMPControl {
 	private Bitmap _imageBitmap;
 	private int opaqueColor = 0xFFFFFFFF;
 	private String _imagePath;
+
+	private int _pixel_r;
+	private int _pixel_g;
+	private int _pixel_b;
+
+	private int _pos_x;
+	private int _pos_y;
+
+
 	public MMPPanel(Context context, float screenRatio) {
 		super(context, screenRatio);
 		_myRect = new RectF();
 	}
-	
+
+	private void sendValues() {
+		List<Object> args = new ArrayList<Object>();
+		args.add(this.address);
+		args.add(Float.valueOf(_pixel_r));
+		args.add(Float.valueOf(_pixel_g));
+		args.add(Float.valueOf(_pixel_b));
+		this.controlDelegate.sendGUIMessageArray(args);
+	}
+
+	private void setValues(int r_value, int g_value, int b_value) {
+		_pixel_r = r_value;
+		_pixel_g = g_value;
+		_pixel_b = b_value;
+		invalidate();
+	}
+
 	public void setImagePath(String path) {//takes full path. widget may not be laid out.
 		/*if(_imageBitmap!=null) _imageBitmap.recycle();
 		_imageBitmap = BitmapFactory.decodeFile(path);
@@ -92,6 +118,8 @@ public class MMPPanel extends MMPControl {
 			paint.setTextSize(20*this.screenRatio);
 			canvas.drawText("image file not found", 10,20*this.screenRatio,this.paint);
 		}
+
+		canvas.drawCircle((float)_pos_x, (float)_pos_y, (float)10, this.paint);
 	}
 
 	public void receiveList(List<Object> messageArray){ 
@@ -102,6 +130,31 @@ public class MMPPanel extends MMPControl {
 			File extFile = new File(/*Environment.getExternalStorageDirectory()*/ MainActivity.getDocumentsFolderPath(), path);
             setImagePath(extFile.getAbsolutePath());
 		}
+
+		if (messageArray.size()==3 && (messageArray.get(0) instanceof String) && ((String)(messageArray.get(0))).equals("getpix")){
+			if (_imageBitmap != null)
+			{
+				int pos_x = ((int)(((Float)(messageArray.get(1))).floatValue()));
+				int pos_y = ((int)(((Float)(messageArray.get(2))).floatValue()));
+
+				//clamp x and y
+				if (pos_x > _imageBitmap.getWidth()) pos_x = _imageBitmap.getWidth();
+				if (pos_y > _imageBitmap.getHeight()) pos_x = _imageBitmap.getHeight();
+
+				_pos_x = pos_x;
+				_pos_y = pos_y;
+
+				int pixcolors = _imageBitmap.getPixel(pos_x, pos_y);
+
+				int redValue = Color.red(pixcolors);
+				int blueValue = Color.blue(pixcolors);
+				int greenValue = Color.green(pixcolors);
+
+				setValues(redValue, greenValue, blueValue);
+				sendValues();
+			}
+		}
+
 		//highlight
 	    if (messageArray.size()==2 && (messageArray.get(0) instanceof String) && ((String)(messageArray.get(0))).equals("highlight")){
 	    	_highlighted = ((int)(((Float)(messageArray.get(1))).floatValue()) > 0);//ugly
