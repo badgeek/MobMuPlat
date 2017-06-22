@@ -33,17 +33,14 @@ public class MMPPanel extends MMPControl {
 	private int opaqueColor = 0xFFFFFFFF;
 	private String _imagePath;
 
-	private int _pixel_r;
-	private int _pixel_g;
-	private int _pixel_b;
-
-	private int _pos_x;
-	private int _pos_y;
-
+	private int _pixel_r, _pixel_g,  _pixel_b;
+	private float _pos_x, _pos_y;
 
 	public MMPPanel(Context context, float screenRatio) {
 		super(context, screenRatio);
 		_myRect = new RectF();
+		_pos_x = 0;
+		_pos_y = 0;
 	}
 
 	private void sendValues() {
@@ -119,7 +116,7 @@ public class MMPPanel extends MMPControl {
 			canvas.drawText("image file not found", 10,20*this.screenRatio,this.paint);
 		}
 
-		canvas.drawCircle((float)_pos_x, (float)_pos_y, (float)10, this.paint);
+		canvas.drawCircle(_pos_x*canvas.getWidth(), _pos_y*canvas.getHeight(), (float)15, this.paint);
 	}
 
 	public void receiveList(List<Object> messageArray){ 
@@ -132,19 +129,19 @@ public class MMPPanel extends MMPControl {
 		}
 
 		if (messageArray.size()==3 && (messageArray.get(0) instanceof String) && ((String)(messageArray.get(0))).equals("getpix")){
+			float pos_x = (((Float)(messageArray.get(1))).floatValue());
+			float pos_y = (((Float)(messageArray.get(2))).floatValue());
+
+			_pos_x = pos_x;
+			_pos_y = pos_y;
+
 			if (_imageBitmap != null)
 			{
-				int pos_x = ((int)(((Float)(messageArray.get(1))).floatValue()));
-				int pos_y = ((int)(((Float)(messageArray.get(2))).floatValue()));
-
 				//clamp x and y
 				if (pos_x > _imageBitmap.getWidth()) pos_x = _imageBitmap.getWidth();
 				if (pos_y > _imageBitmap.getHeight()) pos_x = _imageBitmap.getHeight();
 
-				_pos_x = pos_x;
-				_pos_y = pos_y;
-
-				int pixcolors = _imageBitmap.getPixel(pos_x, pos_y);
+				int pixcolors = _imageBitmap.getPixel(((int)(pos_x*_imageBitmap.getWidth())), ((int)(pos_y*_imageBitmap.getHeight())));
 
 				int redValue = Color.red(pixcolors);
 				int blueValue = Color.blue(pixcolors);
@@ -152,7 +149,10 @@ public class MMPPanel extends MMPControl {
 
 				setValues(redValue, greenValue, blueValue);
 				sendValues();
+
 			}
+
+			invalidate();
 		}
 
 		//highlight
