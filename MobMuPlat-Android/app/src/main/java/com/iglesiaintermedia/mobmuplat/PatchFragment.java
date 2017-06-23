@@ -162,9 +162,9 @@ public class PatchFragment extends Fragment implements ControlDelegate, PagingSc
                 String fileJSON = "";
                 try {
                     if (_mainActivity.hardwareScreenType == CanvasType.canvasTypeWidePhone) {
-                        fileJSON = MainActivity.readMMPAssetToString(getActivity().getAssets().open("Welcome.mmp"));
+                        fileJSON = MainActivity.readMMPAssetToString(getActivity().getAssets().open("spatial_sound.mmp"));
                     } else if (_mainActivity.hardwareScreenType == CanvasType.canvasTypeTallPhone) {
-                        fileJSON = MainActivity.readMMPAssetToString(getActivity().getAssets().open("Welcome-ip5.mmp"));
+                        fileJSON = MainActivity.readMMPAssetToString(getActivity().getAssets().open("spatial_sound.mmp"));
                     } else if (_mainActivity.hardwareScreenType == CanvasType.canvasTypeWideTablet) {
                         fileJSON = MainActivity.readMMPAssetToString(getActivity().getAssets().open("Welcome-Pad.mmp"));
                     } else if (_mainActivity.hardwareScreenType == CanvasType.canvasTypeTallTablet) {
