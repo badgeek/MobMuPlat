@@ -257,7 +257,7 @@ public class MainActivity extends FragmentActivity implements LocationListener, 
 		}
 
 		//temp
-		//shouldCopyDocs = true;
+		shouldCopyDocs = true;
 		//copy
 		if(shouldCopyDocs) {//!alreadyStartedOnVersion || [alreadyStartedOnVersion boolValue] == NO) {
 			List<String> defaultPatchesList;
