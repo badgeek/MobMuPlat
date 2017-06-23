@@ -1,1 +1,1 @@
-include ':app', ':mobmuplatandroidwear'
+include ':app', ':mobmuplatandroidwear', ':pd-core-1.0.3'
