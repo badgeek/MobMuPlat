@@ -111,6 +111,10 @@ import com.example.inputmanagercompat.InputManagerCompat.InputDeviceListener;
 
 import cx.mccormick.pddroidparty.PdParser;
 
+import com.lib.kalmanlocationmanager.KalmanLocationManager;
+import static com.lib.kalmanlocationmanager.KalmanLocationManager.UseProvider;
+
+
 public class MainActivity extends FragmentActivity implements LocationListener, SensorEventListener, AudioDelegate, InputDeviceListener, OnBackStackChangedListener,
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener {
@@ -152,7 +156,8 @@ public class MainActivity extends FragmentActivity implements LocationListener, 
 	private BroadcastReceiver _bc;
 	private boolean _backgroundAudioAndNetworkEnabled;
 
-	private LocationManager locationManagerA, locationManagerB;
+	//private LocationManager locationManagerA, locationManagerB;
+	private KalmanLocationManager mKalmanLocationManager;
 
 	//sensor
 	float[] _rawAccelArray;
@@ -169,6 +174,25 @@ public class MainActivity extends FragmentActivity implements LocationListener, 
   private GoogleApiClient mGoogleApiClient;
 	private static final long CONNECTION_TIME_OUT_MS = 100;
 	private String nodeId;
+
+
+	/**
+	 * Request location updates with the highest possible frequency on gps.
+	 * Typically, this means one update per second for gps.
+	 */
+	private static final long GPS_TIME = 1000;
+
+	/**
+	 * For the network provider, which gives locations with less accuracy (less reliable),
+	 * request updates every 5 seconds.
+	 */
+	private static final long NET_TIME = 5000;
+
+	/**
+	 * For the filter-time argument we use a "real" value: the predictions are triggered by a timer.
+	 * Lets say we want 5 updates (estimates) per second = update each 200 millis.
+	 */
+	private static final long FILTER_TIME = 200;
 	
 
 	@Override
@@ -718,34 +742,45 @@ public class MainActivity extends FragmentActivity implements LocationListener, 
 	}
 
 	private void initLocation() {
-		locationManagerA = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
+		//locationManagerA = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
 		//locationManagerA.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 2000, 5, this);
-		locationManagerB = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
+		//locationManagerB = (LocationManager)getSystemService(Context.LOCATION_SERVICE);
 		//locationManagerB.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 2000, 5, this);
+		mKalmanLocationManager = new KalmanLocationManager(this);
 	}
 
 	public void startLocationUpdates() {
 		Location lastKnownLocation = null;
-		if (locationManagerA!=null){
-			locationManagerA.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 2000, 5, this);
-			// send initial val from this
-			lastKnownLocation = locationManagerA.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-			if (lastKnownLocation != null)onLocationChanged(lastKnownLocation);
-		}
-		if (locationManagerB!=null){
-			locationManagerB.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000, 5, this);
-			//if initial didn't work, try here
+//		if (locationManagerA!=null){
+//			locationManagerA.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 2000, 5, this);
+//			// send initial val from this
+//			lastKnownLocation = locationManagerA.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+//			if (lastKnownLocation != null)onLocationChanged(lastKnownLocation);
+//		}
+//		if (locationManagerB!=null){
+//			locationManagerB.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2000, 5, this);
+//			//if initial didn't work, try here
+//			if (lastKnownLocation==null) {
+//				lastKnownLocation = locationManagerB.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+//				if (lastKnownLocation != null)onLocationChanged(lastKnownLocation);
+//			}
+//		}
+		if (mKalmanLocationManager != null){
+			mKalmanLocationManager.requestLocationUpdates(
+					UseProvider.GPS_AND_NET, FILTER_TIME, GPS_TIME, NET_TIME, this, true);
 			if (lastKnownLocation==null) {
-				lastKnownLocation = locationManagerB.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-				if (lastKnownLocation != null)onLocationChanged(lastKnownLocation);
+				//lastKnownLocation = locationManagerB.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+				//if (lastKnownLocation != null)onLocationChanged(lastKnownLocation);
 			}
 		}
-		
+
+
 	}
 
 	public void stopLocationUpdates() {
-		if (locationManagerA!=null)locationManagerA.removeUpdates(this);
-		if (locationManagerB!=null)locationManagerB.removeUpdates(this);
+		//if (locationManagerA!=null)locationManagerA.removeUpdates(this);
+		//if (locationManagerB!=null)locationManagerB.removeUpdates(this);
+		if (mKalmanLocationManager!=null)mKalmanLocationManager.removeUpdates(this);
 	}
 
 	private void initSensors() { //TODO allow sensors on default thread for low-power devices (or just shutoff)
