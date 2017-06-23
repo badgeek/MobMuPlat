@@ -805,6 +805,14 @@ public class PatchFragment extends Fragment implements ControlDelegate, PagingSc
                     //if(val>0)
                     _mainActivity.send sensorManager.re
                 }*/
+            else if (args.length==2 && args[0].equals("/enableLogging") &&  args[1] instanceof Float) {
+                float val= ((Float)args[1]).floatValue();
+                if(val > 0){
+                    _mainActivity.enableLogging();
+                } else {
+                    _mainActivity.disableLogging();
+                }
+            }
             else if (args.length==2 && args[0].equals("/enableLocation") &&  args[1] instanceof Float) {
                 float val= ((Float)args[1]).floatValue();
                 if(val > 0){

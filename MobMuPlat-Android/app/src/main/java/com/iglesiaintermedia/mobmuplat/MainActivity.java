@@ -2,10 +2,12 @@ package com.iglesiaintermedia.mobmuplat;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -168,6 +170,8 @@ public class MainActivity extends FragmentActivity implements LocationListener, 
 	Object[] _rotationMsgArray;
 	Object[] _compassMsgArray; 
 	private boolean _shouldSwapAxes = false;
+
+	boolean enableLogging = false;
 	
 	// wear
   WorkerThread wt;
@@ -783,6 +787,14 @@ public class MainActivity extends FragmentActivity implements LocationListener, 
 		if (mKalmanLocationManager!=null)mKalmanLocationManager.removeUpdates(this);
 	}
 
+	public void enableLogging() {
+		enableLogging = true;
+	}
+
+	public void disableLogging() {
+		enableLogging = false;
+	}
+
 	private void initSensors() { //TODO allow sensors on default thread for low-power devices (or just shutoff)
 
 		//_camera = Camera.open();
@@ -903,6 +915,36 @@ public class MainActivity extends FragmentActivity implements LocationListener, 
             }
         }
         return false;
+	}
+
+	private void appendLog(String text)
+	{
+		File logFile = new File(MainActivity.getDocumentsFolderPath() + "/gps.txt");
+		if (!logFile.exists())
+		{
+			try
+			{
+				logFile.createNewFile();
+			}
+			catch (IOException e)
+			{
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		try
+		{
+			//BufferedWriter for performance, true to set append to file flag
+			BufferedWriter buf = new BufferedWriter(new FileWriter(logFile, true));
+			buf.append(text);
+			buf.newLine();
+			buf.close();
+		}
+		catch (IOException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	private void copyInputStream(InputStream in, String filename, boolean showAlert) {
@@ -1221,6 +1263,9 @@ public class MainActivity extends FragmentActivity implements LocationListener, 
 		int longRough = (int)(location.getLongitude()*1000);
 		int latFine = (int)Math.abs((location.getLatitude() % .001)*1000000);
 		int longFine = (int)Math.abs(( location.getLongitude() % .001)*1000000);
+
+		if (enableLogging)
+		appendLog(String.valueOf(location.getLatitude()) + "|" + String.valueOf(location.getLongitude()));
 
 		Object[] msgArray = {"/location", 
 				Float.valueOf((float)location.getLatitude()), 
