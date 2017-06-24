@@ -22,6 +22,8 @@ import android.os.Environment;
 import android.util.Log;
 import android.view.MotionEvent;
 
+import static java.lang.Math.abs;
+
 public class MMPPanel extends MMPControl {
 	
 	//private String _imagePath;
@@ -33,19 +35,48 @@ public class MMPPanel extends MMPControl {
 	private int opaqueColor = 0xFFFFFFFF;
 	private String _imagePath;
 
-	private int _pixel_r, _pixel_g,  _pixel_b;
+	private int _pixel_r = 0, _pixel_g = 0,  _pixel_b = 0;
 	private float _pos_x, _pos_y;
+
+	//topleft
+	private float lat1 = 0;
+	private float lon1 = 0;
+
+	//bottom right
+	private float lat2 = 0;
+	private float lon2 = 0;
 
 	public MMPPanel(Context context, float screenRatio) {
 		super(context, screenRatio);
 		_myRect = new RectF();
 		_pos_x = 0;
 		_pos_y = 0;
+//
+//		lat1 = (float) -7.735333;
+//		lon1 = (float) 110.385055;
+//
+//		lat2 = (float) -7.715313;
+//		lon2 = (float) 110.405207;
+
+
+
+
 	}
+
+
+	public double convertPdGPS(float val1, float val2) {
+		double reverse = 1;
+		if (val1 < 0) reverse = -1;
+		return (abs(val1) + (val2/1e+06)) * reverse;
+	}
+
 
 	private void sendValues() {
 		List<Object> args = new ArrayList<Object>();
 		args.add(this.address);
+		args.add(Float.valueOf(_pos_x));
+		args.add(Float.valueOf(_pos_y));
+
 		args.add(Float.valueOf(_pixel_r));
 		args.add(Float.valueOf(_pixel_g));
 		args.add(Float.valueOf(_pixel_b));
@@ -119,6 +150,17 @@ public class MMPPanel extends MMPControl {
 		canvas.drawCircle(_pos_x*canvas.getWidth(), _pos_y*canvas.getHeight(), (float)15, this.paint);
 	}
 
+	public float normalizeLatToBound(double lat) {
+		double width = abs(lat1 - lat2);
+		return (float) (abs(lat-lat1)/width);
+	}
+
+	public float normalizeLonToBound(double lon) {
+		double width = abs(lon1 - lon2);
+		return (float) (abs(lon-lon1)/width);
+	}
+
+
 	public void receiveList(List<Object> messageArray){ 
 		super.receiveList(messageArray);
     	//image path
@@ -139,7 +181,7 @@ public class MMPPanel extends MMPControl {
 			{
 				//clamp x and y
 				if (pos_x > _imageBitmap.getWidth()) pos_x = _imageBitmap.getWidth();
-				if (pos_y > _imageBitmap.getHeight()) pos_x = _imageBitmap.getHeight();
+				if (pos_y > _imageBitmap.getHeight()) pos_y = _imageBitmap.getHeight();
 
 				int pixcolors = _imageBitmap.getPixel(((int)(pos_x*_imageBitmap.getWidth())), ((int)(pos_y*_imageBitmap.getHeight())));
 
@@ -147,11 +189,89 @@ public class MMPPanel extends MMPControl {
 				int blueValue = Color.blue(pixcolors);
 				int greenValue = Color.green(pixcolors);
 
-				setValues(redValue, greenValue, blueValue);
+
+				_pixel_r = redValue;
+				_pixel_g = greenValue;
+				_pixel_b = blueValue;
+
+				//setValues(redValue, greenValue, blueValue);
 				sendValues();
 
 			}
 
+			invalidate();
+		}
+
+		if (messageArray.size()==9 && (messageArray.get(0) instanceof String) && ((String)(messageArray.get(0))).equals("setgpsbound")) {
+
+			float val1= (((Float)(messageArray.get(1))).floatValue());
+			float val2= (((Float)(messageArray.get(2))).floatValue());
+			float val3= (((Float)(messageArray.get(3))).floatValue());
+			float val4= (((Float)(messageArray.get(4))).floatValue());
+
+			float val5= (((Float)(messageArray.get(5))).floatValue());
+			float val6= (((Float)(messageArray.get(6))).floatValue());
+			float val7= (((Float)(messageArray.get(7))).floatValue());
+			float val8= (((Float)(messageArray.get(8))).floatValue());
+
+			lat1 = (float) convertPdGPS(val3, val4);
+			lon1 = (float) convertPdGPS(val1, val2);
+
+			lat2 = (float) convertPdGPS(val7, val8);
+			lon2 = (float) convertPdGPS(val5, val6);
+
+			Log.d("pdspat", "lat1: "  + String.valueOf(lat1));
+			Log.d("pdspat", "lon1: "  + String.valueOf(lon1));
+
+			Log.d("pdspat", "lat2: "  + String.valueOf(lat2));
+			Log.d("pdspat", "lon2: "  + String.valueOf(lon2));
+
+
+
+
+		}
+
+
+		if (messageArray.size()==1 && (messageArray.get(0) instanceof String) && ((String)(messageArray.get(0))).equals("updategpspos")){
+
+			_pos_x = normalizeLonToBound((float)MainActivity.lon1);
+			_pos_y = 1-normalizeLatToBound((float)MainActivity.lat1);
+
+			//clamp
+			if (_pos_x > 1) _pos_x = 1;
+			if (_pos_x < 0) _pos_x = 0;
+
+			if (_pos_y > 1) _pos_y = 1;
+			if (_pos_y < 0) _pos_y = 0;
+
+			//Log.d("pdspat", "X: "  + String.valueOf(_pos_x));
+			//Log.d("pdspat", "Y: "  + String.valueOf(_pos_y));
+
+			if (_imageBitmap != null)
+			{
+				//clamp x and y
+
+				int pix_pos_x = ((int)(_pos_x*_imageBitmap.getWidth()))-1;
+				int pix_pos_y = ((int)(_pos_y*_imageBitmap.getHeight()))-1;
+
+				if (pix_pos_x > _imageBitmap.getWidth()) pix_pos_x = _imageBitmap.getWidth();
+				if (pix_pos_x < 0) pix_pos_x = 0;
+
+				if (pix_pos_y > _imageBitmap.getHeight()) pix_pos_y = _imageBitmap.getHeight();
+				if (pix_pos_y < 0) pix_pos_y = 0;
+
+
+				int pixcolors = _imageBitmap.getPixel(pix_pos_x, pix_pos_y);
+
+				int redValue = Color.red(pixcolors);
+				int blueValue = Color.blue(pixcolors);
+				int greenValue = Color.green(pixcolors);
+				_pixel_r = redValue;
+				_pixel_g = greenValue;
+				_pixel_b = blueValue;
+			}
+
+			sendValues();
 			invalidate();
 		}
 

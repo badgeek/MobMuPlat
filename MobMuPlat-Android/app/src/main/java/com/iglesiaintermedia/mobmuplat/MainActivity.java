@@ -172,7 +172,11 @@ public class MainActivity extends FragmentActivity implements LocationListener, 
 	private boolean _shouldSwapAxes = false;
 
 	boolean enableLogging = false;
-	
+
+
+	public static double lat1 = 0;
+	public static double lon1 = 0;
+
 	// wear
   WorkerThread wt;
   private GoogleApiClient mGoogleApiClient;
@@ -717,6 +721,9 @@ public class MainActivity extends FragmentActivity implements LocationListener, 
 		return jsonString;
 	}
 
+
+
+
 	static public String readMMPAssetToString(InputStream is) {
 		if (is == null) return null;
 		//File file = new File(MainActivity.getDocumentsFolderPath(),filename);
@@ -780,6 +787,7 @@ public class MainActivity extends FragmentActivity implements LocationListener, 
 
 
 	}
+
 
 	public void stopLocationUpdates() {
 		//if (locationManagerA!=null)locationManagerA.removeUpdates(this);
@@ -1263,6 +1271,9 @@ public class MainActivity extends FragmentActivity implements LocationListener, 
 		int longRough = (int)(location.getLongitude()*1000);
 		int latFine = (int)Math.abs((location.getLatitude() % .001)*1000000);
 		int longFine = (int)Math.abs(( location.getLongitude() % .001)*1000000);
+
+		lat1 = location.getLatitude();
+		lon1 = location.getLongitude();
 
 		if (enableLogging)
 		appendLog(String.valueOf(location.getLatitude()) + "|" + String.valueOf(location.getLongitude()));
