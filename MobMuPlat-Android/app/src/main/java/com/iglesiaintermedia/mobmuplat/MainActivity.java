@@ -369,8 +369,10 @@ public class MainActivity extends FragmentActivity implements LocationListener, 
 
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
+
 		if (savedInstanceState == null) {
-			launchSplash();
+			//launchSplash();
+			getSupportFragmentManager().beginTransaction().add(R.id.container, _patchFragment).commitAllowingStateLoss();
 		}
 	}
 
